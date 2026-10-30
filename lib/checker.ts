@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import type { InvoiceInput, CheckResult } from './types';
+import {paise,formatPaise,calculateInvoice} from './money';
 export const limits = { attempts: 2, modelSteps: 3, outputTokensPerStep: 400, requestTimeoutMs: 25000, inputCharacters: 12000 } as const;
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v, 'Enter a valid date');
-const amount = z.number().finite().min(0).max(100000000).refine(v => Math.abs(v * 100 - Math.round(v * 100)) < 0.00001, 'Use at most two decimal places');
+const amount = z.number().finite().min(0).max(100000000).refine(v => {try{paise(v);return true;}catch{return false;}}, 'Use at most two decimal places');
 export const invoiceSchema = z.object({
   supplier: z.string().trim().min(2).max(160), invoice_number: z.string().trim().min(1).max(80),
   invoice_date: dateOnly, due_date: dateOnly, category: z.enum(['Office supplies', 'Software & services', 'Equipment', 'Travel', 'Other']),
@@ -14,11 +15,11 @@ export function checkInvoice(input: InvoiceInput, duplicate = false): CheckResul
   const parsed = invoiceSchema.safeParse(input);
   if (!parsed.success) return { passed: false, expected_total: 0, checks: [{ code: 'schema', label: 'Required information', passed: false, detail: parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ') }] };
   const v = parsed.data;
-  const expectedCents = v.items.reduce((sum, item) => sum + item.quantity * Math.round(item.unit_price * 100), 0) + Math.round(v.tax * 100);
-  const expected = expectedCents / 100;
+  const expectedCents = calculateInvoice(v.items,v.tax).total;
+  const expected = Number(expectedCents) / 100;
   const checks = [
     { code: 'required', label: 'Required information', passed: true, detail: 'Supplier, invoice number, dates and line items are present.' },
-    { code: 'arithmetic', label: 'Line items & total', passed: expectedCents === Math.round(v.total * 100), detail: `Expected INR ${expected.toFixed(2)} including tax; submitted INR ${v.total.toFixed(2)}.` },
+    { code: 'arithmetic', label: 'Line items & total', passed: expectedCents === paise(v.total), detail: `Expected INR ${formatPaise(expectedCents)} including tax; submitted INR ${formatPaise(paise(v.total))}. Calculated independently in integer paise.` },
     { code: 'duplicate', label: 'Duplicate prevention', passed: !duplicate, detail: duplicate ? 'This supplier and invoice number already exist.' : 'No matching supplier and invoice number found.' },
     { code: 'dates', label: 'Date order', passed: v.due_date >= v.invoice_date, detail: v.due_date >= v.invoice_date ? 'Due date is on or after the invoice date.' : 'Due date cannot be earlier than invoice date.' },
     { code: 'amount_limit', label: 'Review amount limit', passed: expected <= 1000000, detail: expected <= 1000000 ? 'Within the INR 10,00,000 prototype review limit.' : 'Above the prototype limit; needs a separate finance review.' }

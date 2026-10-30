@@ -11,7 +11,7 @@ test('missing tax is not silently set to zero',()=>{const data=parseInvoiceText(
 test('missing due date is not invented',()=>{const data=parseInvoiceText(sample.replace('Due date: 2026-11-15',''));assert.equal(data.due_date,null);assert.equal(toInvoiceInput(data).input,null);});
 test('foreign currency is not silently converted to INR',()=>{const data=parseInvoiceText(sample.replace('Currency: INR','Currency: USD'));assert.equal(data.currency,'USD');assert.equal(toInvoiceInput(data).input,null);});
 test('missing supplier is not guessed from customer name',()=>{const data=parseInvoiceText(sample.replace('Supplier: Paper & Co.','Customer: Paper & Co.'));assert.equal(data.supplier,null);});
-test('invalid file type blocked',()=>assert.throws(()=>validateDocument('invoice.html','text/html',100),/Use DOCX/));
+test('invalid file type blocked',()=>assert.throws(()=>validateDocument('invoice.html','text/html',100),/Use PDF/));
 test('empty document blocked',()=>assert.throws(()=>validateDocument('invoice.pdf','application/pdf',0),/empty/));
 test('oversized document blocked',()=>assert.throws(()=>validateDocument('invoice.pdf','application/pdf',4*1024*1024),/3 MB/));
 test('valid document accepted',()=>assert.doesNotThrow(()=>validateDocument('invoice.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document',2048)));

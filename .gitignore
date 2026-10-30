@@ -8,3 +8,7 @@ playwright-report/
 test-results/
 
 supabase/.temp/
+
+# Generated from pinned PDF.js dependency before build
+public/pdf.worker.min.mjs
+.codex-build/

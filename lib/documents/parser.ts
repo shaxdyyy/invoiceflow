@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { invoiceSchema } from '../checker';
+import {paise} from '../money';
 import type { InvoiceInput } from '../types';
 export const documentLimits = { maxBytes: 3 * 1024 * 1024, maxText: 24000, attempts: 2, dailyCalls: 10 };
-export const acceptedTypes = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','text/plain'];
-export const documentAccept='.docx,.xlsx,.txt';
-export function documentMime(name:string){const ext=name.toLowerCase().split('.').pop();return ext==='docx'?acceptedTypes[0]:ext==='xlsx'?acceptedTypes[1]:ext==='txt'?acceptedTypes[2]:'';}
+export const acceptedTypes = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','text/plain','application/pdf','image/jpeg'];
+export const documentAccept='.docx,.xlsx,.txt,.pdf,.jpg,.jpeg';
+export function documentMime(name:string){const ext=name.toLowerCase().split('.').pop();return ext==='docx'?acceptedTypes[0]:ext==='xlsx'?acceptedTypes[1]:ext==='txt'?acceptedTypes[2]:ext==='pdf'?acceptedTypes[3]:ext==='jpg'||ext==='jpeg'?acceptedTypes[4]:'';}
 export const extractedSchema = z.object({
  supplier:z.string().max(160).nullable(), invoice_number:z.string().max(80).nullable(),
  invoice_date:z.string().nullable(), due_date:z.string().nullable(), currency:z.string().max(12).nullable(),
@@ -18,7 +19,8 @@ export interface Extraction { data: Extracted; engine:'gemini'|'local-text'|'loc
 export function validateDocument(name:string,type:string,size:number){
  if(size<=0)throw new Error('This file is empty. Choose an invoice with content.');
  if(size>documentLimits.maxBytes)throw new Error('Choose a document smaller than 3 MB.');
- const mime=documentMime(name);if(!mime||!['',mime,'application/octet-stream'].includes(type))throw new Error('Use DOCX, Excel (.xlsx), or TXT invoices only.');
+ const mime=documentMime(name);if(!mime||!['',mime,'application/octet-stream'].includes(type))throw new Error('Use PDF, JPG, DOCX, Excel (.xlsx), or TXT invoices.');
+ if(/[\x00-\x1f\x7f/\\]/.test(name)||!name.trim())throw new Error('Use a valid filename without paths or control characters.');
  if(name.length>180)throw new Error('Shorten the filename to fewer than 180 characters.');
 }
 function readAmount(s:string|undefined):number|null {if(!s)return null;const v=Number(s.replace(/[,₹\s]/g,''));return Number.isFinite(v)&&v>=0?v:null;}
@@ -35,7 +37,7 @@ export function parseInvoiceText(text:string):Extracted{
  const taxMatches=[...normalized.matchAll(/^(?:tax|gst|cgst|sgst|igst)(?:\s*amount)?(?:\s*@\s*\d+(?:\.\d+)?%)?\s*[:\-]\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d{1,2})?)\s*$/gim)];
  const explicitTax=readAmount(field(/^(?:tax|gst)(?:\s*amount)?\s*[:\-]\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d{1,2})?)\s*$/im));
  const components=taxMatches.filter(m=>/^(?:cgst|sgst|igst)/i.test(m[0]));
- const componentTax=components.length?Math.round(components.reduce((s,m)=>s+(readAmount(m[1])||0),0)*100)/100:null;
+ const componentTax=components.length?Number(components.reduce((s,m)=>s+paise(readAmount(m[1])||0),0n))/100:null;
  const tax=explicitTax??componentTax;
  const currency=/\b(?:USD|EUR|GBP|AED)\b|\$|€|£/.test(normalized)?(normalized.match(/\b(?:USD|EUR|GBP|AED)\b/)?.[0]||'NON-INR'):/\bINR\b|₹|\bRs\.?/.test(normalized)?'INR':null;
  const items:Extracted['items']=[];let descriptionColumn=0,quantityColumn=1,priceColumn=2;
