@@ -38,3 +38,15 @@ This records actual work, not a reconstructed claim of manual authorship. Develo
 ## Verification boundaries
 
 Provider requests need a configured model key. Do not report live model success until that happens. UI/deployment verification results are appended only after actual checks.
+
+## Deployment and browser verification
+
+- Source uploaded through the GitHub connector because the local Git transport had no write credential.
+- Direct Vercel production deployment succeeded. Git-based auto-deployment is not linked: Vercel reports that the owner must add a GitHub Login Connection.
+- Production URL: https://invoiceflow-eight-omega.vercel.app
+- Browser checked the dashboard, executed all 14 test-lab scenarios, reviewed and approved a sample invoice, and confirmed the saved sample record after reload.
+- Responsive layout inspected at a 390 × 844 viewport; no horizontal document overflow was observed.
+- Sample-mode approval tests use browser-local records. PostgreSQL integration tests separately verify live database permissions and transitions. Live email signup and model provider access are not claimed as verified.
+- Manager activation and optional AI-key setup remain owner actions documented in README.
+- Fixed dashboard attention filtering so escalation records match the displayed count; approval CSV export now matches the inbox filter.
+- Serialized per-user daily review reservations to prevent concurrent requests from bypassing the review-start budget.

@@ -125,6 +125,7 @@ begin
  if result.status in ('pending_approval','approved','rejected','needs_correction') then return result; end if;
  if result.status='processing' and result.updated_at>now()-interval '2 minutes' then raise exception 'Review already in progress'; end if;
  if result.attempts>=2 then raise exception 'Review attempt limit reached. Escalate to a person.'; end if;
+ perform pg_advisory_xact_lock(hashtextextended(auth.uid()::text,0));
  if (select count(*) from public.activity where actor_id=auth.uid() and event='review_started' and created_at>now()-interval '1 day')>=10 then raise exception 'Daily review limit reached (10). No paid fallback is enabled.'; end if;
  update public.invoices set status='processing',attempts=attempts+1,run_id=gen_random_uuid(),updated_at=now() where id=p_id returning * into result;
  insert into public.activity(invoice_id,actor_id,event,details) values(p_id,auth.uid(),'review_started',jsonb_build_object('attempt',result.attempts,'run_id',result.run_id));

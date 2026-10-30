@@ -4,6 +4,10 @@ A working invoice review and approval application for **Problem Statement 2: Bui
 
 InvoiceFlow combines structured invoice submission, deterministic checks, an optional tool-calling AI reviewer, a separate human approver, and a persistent audit trail. It does not make payments.
 
+**Live application:** https://invoiceflow-eight-omega.vercel.app
+
+**Deployment:** the initial release was deployed directly. To enable automatic deployments on future GitHub pushes, connect the GitHub account under Vercel account settings, then link this repository in project Settings → Git.
+
 ## Start here
 
 - **Try the demo:** open the deployed app. The clearly labeled demo uses fictional records stored only in that browser. No model calls are made.
