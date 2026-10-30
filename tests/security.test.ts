@@ -54,6 +54,7 @@ test('confidential company isolation, MFA, audited access and server-owned uploa
  for(const f of ['database/001_invoiceflow.sql','database/002_documents_and_gemini.sql','supabase/migrations/20261030143512_enterprise_controls.sql','supabase/migrations/20261030152200_manager_document_review.sql'])await pg.exec(readFileSync(f,'utf8'));
  await pg.exec(`insert into auth.users(id,email,raw_user_meta_data) values('10000000-0000-0000-0000-000000000001','manager-a@example.invalid','{}'),('10000000-0000-0000-0000-000000000002','employee-a@example.invalid','{}');insert into public.profiles(id,name,role) select id,email,case when email like 'manager%' then 'manager' else 'employee' end from auth.users;insert into private.settings(key,value) values('review_hash',encode(extensions.digest('server-test','sha256'),'hex')),('gemini_configuration','{"encrypted_key":"old-encrypted-value","model":"test"}');`);
  await pg.exec(readFileSync('supabase/migrations/20261030200016_confidential_workspaces_and_pdf_jpg.sql','utf8'));
+ await pg.exec(readFileSync('supabase/migrations/20261030203146_private_security_rpc_implementations.sql','utf8'));
  const sql=readFileSync('tests/security-database.sql','utf8');await pg.exec(sql);
  const r=await pg.query<{name:string;passed:boolean}>('select * from security_results');for(const row of r.rows)assert.equal(row.passed,true,row.name);assert.ok(r.rows.length>=30);console.log(`Security: ${r.rows.length} company/MFA/upload assertions passed`);
  }finally{await pg.close();}

@@ -2,7 +2,7 @@
 
 31 October 2026
 
-Production activation is pending explicit approval after automatic review rejected the live permissions and record migration. No live schema, records or storage policies changed. Browser UI verification remains pending.
+Production activation completed after explicit owner approval. Both migrations are applied. Existing record counts are unchanged: 2 profiles, 5 invoices, 12 documents and 5 audit entries. The production URL is https://invoiceflow-eight-omega.vercel.app/ .
 
 ## Implemented
 - Company membership and database boundaries for invoices, documents, activity, history, storage and assistant queries. Existing records stay in the original company. New accounts must create a separate company or use a single-use 24-hour invitation.
@@ -19,6 +19,13 @@ Production activation is pending explicit approval after automatic review reject
 - 500 generated decimal calculation comparisons passed, including one-paise mismatch blocking.
 - Actual PDF text parsing preserves wrong printed totals. An active-JavaScript PDF is rejected. Actual JPG bytes decode and invalid byte signatures fail.
 - TypeScript and optimized build passed. Production dependency audit: zero reported vulnerabilities.
+
+## Production verification
+- 40 company/MFA/upload assertions passed against the live database. All fictional fixtures and temporary authorization settings were rolled back.
+- Deployed browser demo: supported upload formats visible, practice TXT extraction read-only for employees, independent INR 700 calculation visible, a one-paise mismatch blocked, correction and same-manager approval passed, approved fields locked and correction history retained.
+- Privileged company RPC implementations moved into the private schema behind unchanged invoker wrappers. The new exposed-definer advisory is resolved.
+- Live authenticated Gemini and owner authenticator enrollment were not performed. Owner must complete their authenticator setup privately.
+- The advisor reports leaked-password screening disabled. This is a Supabase Pro-and-above feature; no paid upgrade was enabled. The five private-table no-policy notices are intentional deny-by-default tables with no client grants.
 
 ## Boundaries
 This release is not a penetration-test certification or a guarantee against every attack. The same manager can correct and approve as requested. No independent approver is required. A company still needs an approved provider arrangement, retention policy, malware scanning service if required, and tested backup/recovery appropriate to its deployment. No paid service was enabled. Never describe a risk score as proof of fraud.
