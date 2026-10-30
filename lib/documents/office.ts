@@ -4,7 +4,8 @@ import { documentLimits, documentMime } from './parser';
 // Inspect the ZIP directory before decompression. Never render Office HTML or execute macros/formulas.
 export function inspectOfficeZip(bytes:Uint8Array){
  let expanded=0,entries=0;
- const files=unzipSync(bytes,{filter:entry=>{expanded+=entry.originalSize;entries++;if(expanded>16*1024*1024||entries>1500)throw new Error('Office document is too complex. Use a smaller file.');return entry.name==='word/document.xml';}});
+ const files=unzipSync(bytes,{filter:entry=>{expanded+=entry.originalSize;entries++;if(expanded>16*1024*1024||entries>1500)throw new Error('Office document is too complex. Use a smaller file.');if(/(?:^|\/)(?:vbaProject\.bin|embeddings|activeX)(?:\/|$)|\.exe$/i.test(entry.name))throw new Error('Embedded programs and macros are not allowed.');return entry.name==='word/document.xml'||entry.name.endsWith('.rels')||entry.name==='[Content_Types].xml';}});
+ for(const [name,content] of Object.entries(files))if(name!=='word/document.xml'&&/vbaProject|oleObject|activeX|attachedTemplate|TargetMode\s*=\s*["']External/i.test(strFromU8(content)))throw new Error('Remove macros, embedded objects or external relationships before uploading.');
  return files;
 }
 export async function officeText(bytes:Uint8Array,name:string):Promise<string>{

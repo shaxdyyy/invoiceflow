@@ -1,8 +1,10 @@
 # Coordinator walkthrough
 
+Security upgrade (pending activation): managers verify an authenticator in Settings. Company invitations are single-use. Cloud AI needs explicit company consent; unpaid Gemini is for non-sensitive examples only.
+
 Explain: InvoiceFlow reduces invoice typing while making the source and changes easy to inspect. Employees upload; a manager verifies the evidence and decides. AI helps read and explain, while code checks the numbers.
 
-1. Show the upload picker: DOCX, Excel (.xlsx), TXT only.
+1. Show the upload picker: PDF, JPG/JPEG, DOCX, Excel (.xlsx), TXT.
 2. Upload the practice TXT. It has two items and a total of INR 700. Extraction runs without typing.
 3. Open the comparison. Show original contents on the left, extracted facts on the right.
 4. In Employee view, demonstrate that extracted fields are read-only and there is no edit/approve control.

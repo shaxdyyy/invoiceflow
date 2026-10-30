@@ -8,7 +8,7 @@ export interface ReviewOutput { mode: 'rules' | 'ai'; summary: string; tokens: n
 export async function reviewInvoice(input: InvoiceInput, configuration?: {apiKey:string;model:string}|null): Promise<ReviewOutput> {
   const checks = checkInvoice(input);
   const trace: ReviewOutput['trace'] = [{ tool: 'independent_checker', result: checks.passed ? 'All checks passed' : 'Failed checks: ' + checks.checks.filter(c => !c.passed).map(c => c.code).join(', ') }];
-  const apiKey=configuration?.apiKey||process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const apiKey=configuration?.apiKey;
   if (!checks.passed || !apiKey) return { mode: 'rules', summary: rulesSummary(checks), tokens: 0, trace };
   if (JSON.stringify(input).length > limits.inputCharacters) throw new Error('Input character budget exceeded');
   let checked = false;
