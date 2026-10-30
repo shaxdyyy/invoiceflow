@@ -57,3 +57,12 @@ The preview build sets `NEXT_PUBLIC_PREVIEW_ONLY=true`, disabling database clien
 - Embedded PostgreSQL executes the initial schemas and exact upgrade SQL; existing database assertions plus enterprise assertions verify RLS, server authorization, approval gates, receipt rechecks, cumulative quantities, quota and searching 2,000 invoices beyond the first 1,000.
 - TypeScript and a Next.js production build are required.
 - Gemini network behavior and live-project migration remain release checks, not claims from local tests.
+
+### Completed verification on the prepared branch
+
+- 50 automated tests passed, including a PostgreSQL integration suite with **66 database assertions** (36 existing and 30 enterprise assertions).
+- TypeScript and optimized Next.js build passed.
+- `npm audit --omit=dev --audit-level=moderate`: zero vulnerabilities. ExcelJS uses a pinned UUID override to address its upstream dependency advisory.
+- Browser preview: practice TXT extracted and auto-saved at INR 700; a manager created PO-001 with only three of five folders received; three-way matching showed 60/100 High risk; an attempted approval was blocked; rules exception plan displayed; assistant search returned the two Paper invoices.
+- The screenshot `docs/screenshots/enterprise-risk.jpg` records the browser verification using fictional data.
+- Live Gemini requests and production migration have not been tested in this upgrade. They remain release checks after approval.

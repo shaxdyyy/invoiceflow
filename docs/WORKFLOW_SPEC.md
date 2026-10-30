@@ -51,7 +51,7 @@ A correction resets per-revision attempts, but does not bypass the per-user dail
 - Due date must not precede invoice date.
 - Expected total must be ≤ INR 10,00,000 (prototype policy).
 
-No automatic tax compliance claim. No payment execution. PDF/image/text document ingestion is implemented; structured invoice facts remain the authoritative input for checks.
+No automatic tax compliance claim. No payment execution. DOCX/XLSX/TXT document ingestion is implemented; structured invoice facts remain the authoritative input for checks.
 
 ## Failure paths and tests
 
@@ -63,7 +63,7 @@ The manager reads invoice details, check results and advisory review, then recor
 
 ## Document ingestion extension
 
-Upload PDF, PNG, JPEG, WebP or TXT (3 MB maximum, PDF ≤10 pages). Live files go to a private bucket and get an owner-scoped `documents` record. Automatic extraction uses Gemini when connected, otherwise an explicitly labeled on-device PDF/text/OCR reader. A complete extraction is saved and reviewed without retyping. Missing values, unknown currency and ambiguous fields require confirmation against the source.
+Upload DOCX, Excel (.xlsx), or TXT (3 MB maximum). Live files go to a private bucket and get an owner-scoped `documents` record. Automatic extraction uses Gemini when connected, otherwise an explicitly labeled on-device Office/text reader. A complete extraction is saved and reviewed without retyping. Missing values, unknown currency and ambiguous fields require confirmation against the source.
 
 Gemini structured extraction has at most two attempts per document, a 35-second timeout, 3,500 output tokens per attempt, no SDK retries and a per-user daily extraction budget. Source facts are schema-validated; wrong printed totals are retained for deterministic validation. Local text is capped at 24,000 characters. The owner must confirm free-tier eligibility; the app cannot prove the provider billing plan.
 
