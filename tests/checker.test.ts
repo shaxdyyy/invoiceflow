@@ -1,0 +1,10 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { runScenarios } from '../lib/scenarios';
+import { invoiceSchema, checkInvoice } from '../lib/checker';
+import { validFixture } from '../lib/scenarios';
+for (const scenario of runScenarios()) test(scenario.name,()=>assert.equal(scenario.passed,true,scenario.expected));
+test('invalid calendar date rejected',()=>assert.equal(invoiceSchema.safeParse({...validFixture,invoice_date:'2026-02-30'}).success,false));
+test('fractional quantity rejected',()=>assert.equal(checkInvoice({...validFixture,items:[{description:'Item',quantity:1.5,unit_price:10}],total:15}).passed,false));
+test('infinite amount rejected',()=>assert.equal(checkInvoice({...validFixture,total:Infinity}).passed,false));
+test('negative tax rejected',()=>assert.equal(checkInvoice({...validFixture,tax:-5}).passed,false));
