@@ -66,4 +66,6 @@ Provider requests need a configured model key. Do not report live model success 
 - Original PDF preview and source-engine labeling were visible. The demo manager switch and final approval both worked. No browser errors were recorded during that test.
 - Desktop and 390 × 844 mobile layouts inspected; no horizontal document overflow observed. Google AI Studio connection panel is present.
 - Kept the original preview collapsible so required checks and final decisions remain easy to reach. Added cancellation for on-device reading and a separate image practice option.
-- Added tests for tax-component reconciliation and low-confidence OCR handling. Model access still requires an owner-supplied key and is not claimed as verified.
+- Added tax-component reconciliation tests and low-confidence OCR handling. Model access still requires an owner-supplied key and is not claimed as verified.
+
+- Final deployed image-OCR smoke test passed: generated sample image → actual on-device OCR → two line items and INR 700 → independent checks → approval queue. This was local OCR, not a claimed Gemini request. First use downloaded OCR software assets.

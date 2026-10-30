@@ -15,3 +15,11 @@
 - Manager can inspect originals and save server-encrypted configuration.
 
 Scripts: `tests/documents.test.ts` and `tests/documents-database.sql`. Database tests inject extraction results and storage metadata; they do not call Gemini or claim actual uploaded bytes were parsed by the server. Browser document checks and provider verification are recorded separately.
+
+## Browser verification
+
+- Practice PDF: actual PDF text engine extracted both items and total INR 700; saved and checked automatically.
+- Practice PNG: actual Tesseract OCR extracted both items and total INR 700; saved and checked automatically.
+- Original source access, manager-view switch and final sample approval worked.
+- Desktop and 390 × 844 mobile layouts inspected; no horizontal document overflow observed.
+- These browser tests used the clearly labeled demo. No real Gemini provider call is claimed without an owner-supplied key.
