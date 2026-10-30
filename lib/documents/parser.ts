@@ -30,7 +30,10 @@ export function parseInvoiceText(text:string):Extracted{
  const due_date=date(field(/^(?:due\s*date|payment due)\s*[:\-]\s*([^\n]+)/im));
  const total=readAmount(field(/^(?:grand\s*total|invoice\s*total|amount\s*due|total(?:\s*amount)?)\s*[:\-]?\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d{1,2})?)\s*$/im));
  const taxMatches=[...normalized.matchAll(/^(?:tax|gst|cgst|sgst|igst)(?:\s*amount)?\s*[:\-]\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d{1,2})?)\s*$/gim)];
- const tax=taxMatches.length?Math.round(taxMatches.reduce((s,m)=>s+(readAmount(m[1])||0),0)*100)/100:null;
+ const explicitTax=readAmount(field(/^(?:tax|gst)(?:\s*amount)?\s*[:\-]\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d{1,2})?)\s*$/im));
+ const components=taxMatches.filter(m=>/^(?:cgst|sgst|igst)/i.test(m[0]));
+ const componentTax=components.length?Math.round(components.reduce((s,m)=>s+(readAmount(m[1])||0),0)*100)/100:null;
+ const tax=explicitTax??componentTax;
  const currency=/\b(?:USD|EUR|GBP|AED)\b|\$|€|£/.test(normalized)?(normalized.match(/\b(?:USD|EUR|GBP|AED)\b/)?.[0]||'NON-INR'):/\bINR\b|₹|\bRs\.?/.test(normalized)?'INR':null;
  const items:Extracted['items']=[];
  for(const line of normalized.split('\n')){
@@ -41,6 +44,7 @@ export function parseInvoiceText(text:string):Extracted{
   }
  }
  const uncertainties:string[]=[];
+ if(explicitTax!==null&&componentTax!==null&&explicitTax!==componentTax)uncertainties.push('The printed tax total and tax components disagree.');
  if(!supplier)uncertainties.push('Supplier label was not found.');if(!invoice_number)uncertainties.push('Invoice number was not found.');
  if(!invoice_date)uncertainties.push('Invoice date could not be read.');if(!due_date)uncertainties.push('Due date is not stated or could not be read.');
  if(!items.length)uncertainties.push('Line items need confirmation.');if(tax===null)uncertainties.push('Tax amount is not explicitly stated.');if(total===null)uncertainties.push('Invoice total could not be read.');

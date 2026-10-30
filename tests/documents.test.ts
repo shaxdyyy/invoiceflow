@@ -17,3 +17,6 @@ test('oversized document blocked',()=>assert.throws(()=>validateDocument('invoic
 test('valid document accepted',()=>assert.doesNotThrow(()=>validateDocument('invoice.pdf','application/pdf',2048)));
 test('provider credentials encrypted with authenticated encryption',()=>{process.env.REVIEW_SERVER_SECRET='test-encryption-secret-not-a-real-credential';const plain='test-only-provider-key';const encrypted=encryptCredential(plain);assert.notEqual(encrypted,plain);assert.equal(decryptCredential(encrypted),plain);const parts=encrypted.split('.');parts[1]=Buffer.alloc(16).toString('base64');assert.throws(()=>decryptCredential(parts.join('.')));delete process.env.REVIEW_SERVER_SECRET;});
 test('date with invalid month requires correction',()=>{const data=parseInvoiceText(sample.replace('2026-10-30','2026-25-30'));assert.equal(toInvoiceInput(data).input,null);});
+
+test('tax total and components are not double counted',()=>{const data=parseInvoiceText(sample.replace('Tax: 0.00','Tax: 126.00\nCGST: 63.00\nSGST: 63.00').replace('Total: 700.00','Total: 826.00'));assert.equal(data.tax,126);assert.deepEqual(data.uncertainties,[]);});
+test('inconsistent tax summary needs confirmation',()=>{const data=parseInvoiceText(sample.replace('Tax: 0.00','Tax: 120.00\nCGST: 63.00\nSGST: 63.00'));assert.ok(data.uncertainties.some(v=>v.includes('tax components')));});

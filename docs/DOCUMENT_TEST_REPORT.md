@@ -1,6 +1,6 @@
 # Document workflow verification
 
-30 automated tests passed: 18 original checks/policies plus 12 document parsing, file validation and encrypted credential tests. Production build and typecheck passed.
+32 automated tests passed: 18 original checks/policies plus 14 document parsing, file validation and encrypted credential tests. Production build and typecheck passed.
 
 16 transactional database assertions passed in the dedicated Supabase project. Fixtures and changes were rolled back:
 

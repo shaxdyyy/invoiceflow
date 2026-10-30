@@ -57,5 +57,13 @@ Provider requests need a configured model key. Do not report live model success 
 - Consulted official Ramp invoice-processing patterns and Gemini document-processing/model documentation. Used upload → extract → validate → approval as the interaction model; no proprietary source was copied.
 - Added private PDF/image/text uploads, browser text/OCR reading, Gemini structured extraction, original-document access and automatic checking after save.
 - Added a manager-only in-app AI Studio connection screen, small provider connection test, encrypted key storage and selectable currently documented Gemini models.
-- Production build and TypeScript checks passed. 30 automated tests passed, including actual parsing, missing-field behaviour, preserved mismatches and credential encryption. 16 additional transactional document/storage-permission assertions passed.
+- Production build and TypeScript checks passed. 32 automated tests passed, including actual parsing, missing-field behaviour, preserved mismatches and credential encryption. 16 additional transactional document/storage-permission assertions passed.
 - A real Gemini key has not been provided; no live provider success is claimed. User-account signup/email delivery and full cloud extraction remain separate owner verification steps.
+
+## Browser verification of the upload-first release
+
+- The deployed practice PDF was generated, read by the actual browser PDF engine and parsed into two line items, an explicit zero tax and INR 700 total. It reached approval automatically without manually entering fields.
+- Original PDF preview and source-engine labeling were visible. The demo manager switch and final approval both worked. No browser errors were recorded during that test.
+- Desktop and 390 × 844 mobile layouts inspected; no horizontal document overflow observed. Google AI Studio connection panel is present.
+- Kept the original preview collapsible so required checks and final decisions remain easy to reach. Added cancellation for on-device reading and a separate image practice option.
+- Added tests for tax-component reconciliation and low-confidence OCR handling. Model access still requires an owner-supplied key and is not claimed as verified.

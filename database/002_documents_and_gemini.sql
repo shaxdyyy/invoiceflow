@@ -1,4 +1,8 @@
 -- Private source documents and encrypted Gemini integration.
+create table private.extraction_usage(id uuid primary key default gen_random_uuid(),actor_id uuid not null,created_at timestamptz not null default now());
+alter table private.extraction_usage enable row level security;
+create index extraction_usage_actor on private.extraction_usage(actor_id,created_at);
+revoke all on private.extraction_usage from public,anon,authenticated;
 create table public.documents (
  id uuid primary key default gen_random_uuid(),owner_id uuid not null references public.profiles(id),
  filename text not null,mime_type text not null,storage_path text not null unique,file_size integer not null check(file_size between 1 and 3145728),
@@ -36,7 +40,8 @@ begin
  if result.status='extracting' and result.updated_at>now()-interval '2 minutes' then raise exception 'Document is already being read'; end if;
  if result.extraction_attempts>=2 then raise exception 'Two extraction attempts used. Enter the details manually or ask for help.'; end if;
  perform pg_advisory_xact_lock(hashtextextended(auth.uid()::text,17));
- if (select coalesce(sum(extraction_attempts),0) from public.documents where owner_id=auth.uid() and created_at>now()-interval '24 hours')>=10 then raise exception 'Daily document analysis limit reached. Use local reading or manual entry.'; end if;
+ if (select count(*) from private.extraction_usage where actor_id=auth.uid() and created_at>now()-interval '24 hours')>=10 then raise exception 'Daily document analysis limit reached. Use local reading or manual entry.'; end if;
+ insert into private.extraction_usage(actor_id) values(auth.uid());
  update public.documents set status='extracting',extraction_attempts=extraction_attempts+1,run_id=gen_random_uuid(),updated_at=now() where id=p_id returning * into result;return result;
 end $$;
 create function private.finish_extraction(p_id uuid,p_run_id uuid,p_secret text,p_data jsonb,p_error text) returns public.documents language plpgsql security definer set search_path='' as $$

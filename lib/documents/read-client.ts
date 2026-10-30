@@ -1,6 +1,6 @@
 import { parseInvoiceText, validateDocument, documentLimits, type Extraction } from './parser';
-export async function readDocumentLocally(file:File,onProgress:(message:string)=>void):Promise<Extraction>{
- validateDocument(file.name,file.type,file.size);let text='';let ocr=false;
+export async function readDocumentLocally(file:File,onProgress:(message:string)=>void,signal?:AbortSignal):Promise<Extraction>{
+ if(signal?.aborted)throw new Error('Reading cancelled');validateDocument(file.name,file.type,file.size);let text='';let ocr=false;let confidence=100;
  if(file.type==='text/plain'){text=await file.text();}
  else if(file.type==='application/pdf'){
   onProgress('Reading the PDF…');
@@ -17,16 +17,17 @@ export async function readDocumentLocally(file:File,onProgress:(message:string)=
     if(pageText.replace(/\s/g,'').length<20){
      ocr=true;onProgress(`Reading scanned page ${p} on your device…`);const viewport=page.getViewport({scale:1.6});const canvas=document.createElement('canvas');canvas.width=viewport.width;canvas.height=viewport.height;
      await page.render({canvas,viewport}).promise;
-     worker??=await (await import('tesseract.js')).createWorker('eng');const result=await worker.recognize(canvas);pageText=result.data.text;
+     if(!worker){worker=await (await import('tesseract.js')).createWorker('eng');const current=worker;signal?.addEventListener('abort',()=>void current.terminate(),{once:true});}if(signal?.aborted)throw new Error('Reading cancelled');const result=await worker.recognize(canvas);pageText=result.data.text;confidence=Math.min(confidence,result.data.confidence);
     }
     pages.push(pageText);if(pages.join('').length>documentLimits.maxText)throw new Error('This invoice has too much text. Use a smaller document.');
    }}finally{await worker?.terminate();}
    text=pages.join('\n');
   }finally{await loading.destroy();}
  }else{
-  ocr=true;onProgress('Reading the image on your device…');const {createWorker}=await import('tesseract.js');const worker=await createWorker('eng');
-  try{text=(await worker.recognize(file)).data.text;}finally{await worker.terminate();}
+  ocr=true;onProgress('Reading the image on your device…');const {createWorker}=await import('tesseract.js');const worker=await createWorker('eng');signal?.addEventListener('abort',()=>void worker.terminate(),{once:true});if(signal?.aborted){await worker.terminate();throw new Error('Reading cancelled');}
+  try{const result=await worker.recognize(file);text=result.data.text;confidence=result.data.confidence;}finally{await worker.terminate();}
  }
  if(!text.trim())throw new Error('No readable text was found. Try a clearer document or enter details manually.');
- return {data:parseInvoiceText(text),engine:ocr?'local-ocr':'local-text',text:text.slice(0,documentLimits.maxText),warnings:ocr?['Local OCR can misread characters. Check uncertain fields against the original.']:[]};
+ const data=parseInvoiceText(text);if(ocr&&confidence<85)data.uncertainties.push('OCR confidence is low. Check the extracted details against the original.');
+ return {data,engine:ocr?'local-ocr':'local-text',text:text.slice(0,documentLimits.maxText),warnings:ocr?['Local OCR can misread characters. Check uncertain fields against the original.']:[]};
 }
