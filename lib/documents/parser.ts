@@ -11,7 +11,6 @@ export const extractedSchema = z.object({
  category:z.enum(['Office supplies','Software & services','Equipment','Travel','Other']),
  items:z.array(z.object({description:z.string().max(200),quantity:z.number().nullable(),unit_price:z.number().nullable()})).max(30),
  tax:z.number().nullable(),total:z.number().nullable(), notes:z.string().max(1500),
- po_number:z.string().max(80).nullable().optional(),
  uncertainties:z.array(z.string().max(300)).max(12)
 });
 export type Extracted = z.infer<typeof extractedSchema>;
@@ -28,7 +27,6 @@ export function parseInvoiceText(text:string):Extracted{
  const isLabel=(s:string)=>/^(?:supplier|vendor|from|issued by|invoice\s*(?:number|no\.?|#|date|total)|bill\s*(?:no\.?|number)|issue date|date|due date|payment due|currency|grand total|amount due|total(?: amount)?|(?:tax|gst|cgst|sgst|igst)(?: amount)?(?:\s*@\s*\d+(?:\.\d+)?%)?|(?:purchase order|po)(?:\s*(?:number|no\.?|#))?)\s*:?$/i.test(s);
  const normalized=text.slice(0,documentLimits.maxText).replace(/\r/g,'').split('\n').map(line=>{const cols=line.split(/\s*\|\s*|\t+|\s{2,}/).map(s=>s.trim()).filter(Boolean);if(cols.length>=2&&cols.length%2===0&&cols.every((c,i)=>i%2!==0||isLabel(c)))return cols.filter((_,i)=>i%2===0).map((label,i)=>label.replace(/:$/,'')+': '+cols[i*2+1]).join('\n');return line.replace(/ *\| */g,'  ').trimStart();}).join('\n');
  const field=(pattern:RegExp)=>normalized.match(pattern)?.[1]?.trim();
- const po_number=field(/^(?:purchase order|po)(?:\s*(?:number|no\.?|#))?\s*[:#]\s*(\S+)/im)||null;
  const supplier=field(/^(?:supplier|vendor|from|issued by)\s*[:\-]\s*(.+)$/im)||null;
  const invoice_number=field(/^(?:invoice\s*(?:number|no\.?|#)|bill\s*(?:no\.?|number))\s*[:#\-]?\s*([A-Z0-9][A-Z0-9\-/_ .]{0,79}?)$/im)||null;
  const invoice_date=date(field(/^(?:invoice\s*date|issue\s*date|date)\s*[:\-]\s*([^\n]+)/im));
@@ -57,7 +55,7 @@ export function parseInvoiceText(text:string):Extracted{
  if(!invoice_date)uncertainties.push('Invoice date could not be read.');if(!due_date)uncertainties.push('Due date is not stated or could not be read.');
  if(!items.length)uncertainties.push('Line items need confirmation.');if(tax===null)uncertainties.push('Tax amount is not explicitly stated.');if(total===null)uncertainties.push('Invoice total could not be read.');
  if(currency!=='INR')uncertainties.push(currency?'This document is not in INR.':'Currency is not explicitly stated. Confirm INR before saving.');
- return {po_number,supplier,invoice_number,invoice_date,due_date,currency,category:'Other',items:items.slice(0,30),tax,total,notes:'',uncertainties};
+ return {supplier,invoice_number,invoice_date,due_date,currency,category:'Other',items:items.slice(0,30),tax,total,notes:'',uncertainties};
 }
 export function toInvoiceInput(data:Extracted):{input:InvoiceInput|null;missing:string[]}{
  const parsed=invoiceSchema.safeParse({...data,notes:data.notes||''});

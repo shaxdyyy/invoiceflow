@@ -25,6 +25,7 @@ test('enterprise SQL migrations, RLS, approval gates and 2,000-row search',async
   const results=await pg.exec(sql);const rows=results.flatMap(r=>r.rows).filter((r:Record<string,unknown>)=>'passed' in r);
   assert.ok(rows.length>=16,`${file}: test rows`);for(const r of rows)assert.equal(r.passed,true,String(r.name));
  }
+ await pg.exec(readFileSync('supabase/migrations/20261030152200_manager_document_review.sql','utf8'));
  await pg.exec(readFileSync('tests/enterprise-database.sql','utf8'));
  const result=await pg.query<{name:string;passed:boolean}>('select * from enterprise_results');
  for(const r of result.rows)assert.equal(r.passed,true,r.name);

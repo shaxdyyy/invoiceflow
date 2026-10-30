@@ -1,0 +1,5 @@
+import {NextRequest,NextResponse} from 'next/server';
+import {z} from 'zod';
+import {authenticated} from '@/lib/server-auth';
+import {invoiceSchema} from '@/lib/checker';
+export async function POST(req:NextRequest){try{const {db}=await authenticated(req);const raw=await req.text();if(raw.length>16000)throw new Error('Request too large');const b=z.object({documentId:z.uuid(),revision:z.number().int().min(0),action:z.enum(['save','approve','reject']),reason:z.string().trim().min(5).max(1000),input:z.unknown(),confirmed:z.boolean()}).parse(JSON.parse(raw));if(b.action==='approve'&&!b.confirmed)throw new Error('Compare the original and confirm before approving.');let input=null;if(b.action!=='reject'){const currency=z.object({currency:z.literal('INR')}).parse(b.input);input={...invoiceSchema.parse(b.input),...currency};}const {data,error}=await db.rpc('review_document',{p_id:b.documentId,p_revision:b.revision,p_input:input,p_reason:b.reason,p_action:b.action});if(error)throw error;return NextResponse.json(data);}catch(e){return NextResponse.json({error:(e as {message?:string})?.message||'Could not save the review.'},{status:400});}}

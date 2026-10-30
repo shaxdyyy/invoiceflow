@@ -1,55 +1,18 @@
-# Explain and demonstrate InvoiceFlow
+# Coordinator walkthrough
 
-## Honest introduction
+Explain: InvoiceFlow reduces invoice typing while making the source and changes easy to inspect. Employees upload; a manager verifies the evidence and decides. AI helps read and explain, while code checks the numbers.
 
-“We selected invoice review as our proposed enterprise workflow. We used AI-assisted development to implement it. Our team must understand and verify the input rules, independent checks, human approval and failure controls. User validation is still to be completed unless we supply actual interview notes.”
+1. Show the upload picker: DOCX, Excel (.xlsx), TXT only.
+2. Upload the practice TXT. It has two items and a total of INR 700. Extraction runs without typing.
+3. Open the comparison. Show original contents on the left, extracted facts on the right.
+4. In Employee view, demonstrate that extracted fields are read-only and there is no edit/approve control.
+5. In Manager view, demonstrate the correction reason and source-confirmation checkbox.
+6. For a test, change the extracted total to INR 900 and save/recheck. The sum remains INR 700, so approval is blocked.
+7. Correct it back to the source's INR 700. Record why, compare again and save/approve. One manager performs this; no second manager is required.
+8. Show the first extraction and correction history. The original stays unchanged, and before/after values and reasons are retained. The approved document is locked.
+9. Re-upload the same original and demonstrate duplicate detection. Show risk reasons and exception guidance. A signal is not proof of fraud.
+10. Ask the assistant how missing details should be handled, and search by supplier or invoice number. Show that results open the matching invoice. Demo help/search makes no AI calls; live Gemini is labelled separately.
 
-## Preparation
+Be candid about development: the team defined the problem, chose the workflow and limits, used AI-assisted implementation, reviewed the behavior and verified tests. Show GitHub history and test reports. Do not claim code was written unaided.
 
-1. Confirm organizer acceptance of invoice review and obtain permitted samples.
-2. Speak to a real invoice reviewer. Record their process and feedback accurately; do not invent quotes or results.
-3. Open the app. Explain that the labeled demo is browser-only and uses no live AI.
-4. For the shared backend demo, create an employee account and a separate manager account. Confirm emails. The owner activates the manager using Settings and the one-time code in Vercel. Do not put credentials in slides.
-5. For live AI, add a free-eligible provider key to server settings, redeploy and perform an actual smoke test before claiming the model works.
-
-## Demonstration
-
-1. As employee, submit 10 notebooks × INR 50 with total INR 700.
-2. Run review. Show the arithmetic mismatch and blocked approval.
-3. Correct total to INR 500. Show the before/after snapshot in history.
-4. Run review again. Show Rules-only or AI-assisted accurately.
-5. As a different manager, open Approvals and inspect all evidence.
-6. Enter “Verified against the purchase request” and approve.
-7. Refresh and show the saved decision and timestamp.
-8. Open Test lab, run the scenarios and export the results.
-9. Show GitHub commits, `docs/WORKFLOW_SPEC.md`, actual test reports and development log.
-
-## Easy explanations
-
-- Frontend: the screens the employee and manager use.
-- Backend: the code that receives requests and enforces the process.
-- Database: the shared record of invoices, users and history.
-- Agent: an AI assistant allowed to call specific review tools.
-- Checker: independent rules, so the AI cannot decide whether arithmetic is correct by opinion.
-- Human gate: a real manager must decide; the agent has no approval tool.
-- Retry limit: after two attempts, processing stops for human investigation.
-
-## Expected questions
-
-**Why not only a chatbot?** A chatbot response does not persist workflow state, enforce roles, block duplicates or save a manager decision.
-
-**Why AI if rules can check totals?** Rules provide factual gates. AI adds an understandable contextual review and proposed next step. We do not use AI where exact arithmetic is better.
-
-**What is genuinely validated?** Show only actual interview evidence and executed tests. The test reports distinguish local logic, database integration, UI checks and provider verification.
-
-**What does it cost?** The prototype uses free-tier hosting/database and optional eligible free-tier model access. Limits apply; no paid fallback is configured.
-
-**What is incomplete?** PDF extraction, real supplier verification, accounting integrations, business validation and live model verification until a provider key is tested.
-
-## New upload-first demonstration
-
-Open Upload invoice → Try a practice PDF. Explain that the demo reads the actual sample PDF on-device, not through Gemini. A complete extraction should save and check automatically. Open the source and compare extracted line items. In demo mode, use “Try the manager view” to demonstrate the separate final decision.
-
-For real AI, sign into the live workspace as a manager and open Settings → Google AI Studio. Connect an eligible free-tier key using Test & connect. Only claim a live model demonstration after successfully reading a sample document with Gemini. Show the extraction engine label and original source.
-
-Use the video-inspired design as a visual reference, not as copied implementation. Explain that interface decisions prioritize one upload action, readable text, explicit exception handling and a final human decision.
+Validation includes automated Office reader/control tests and embedded PostgreSQL tests of employee write denial, manager correction/approval, original snapshots, audit history, duplicate blocking and a 2,000-invoice search fixture. Live model quota and production activation remain separate checks.

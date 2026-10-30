@@ -2,14 +2,12 @@ export type Status = 'submitted' | 'processing' | 'needs_correction' | 'pending_
 export type Role = 'employee' | 'manager';
 export interface LineItem { description: string; quantity: number; unit_price: number }
 export interface InvoiceInput {
-  po_number?:string|null;
   supplier: string; invoice_number: string; invoice_date: string; due_date: string;
   category: string; items: LineItem[]; tax: number; total: number; notes: string;
 }
 export interface Check { code: string; label: string; passed: boolean; detail: string }
 export interface CheckResult { passed: boolean; expected_total: number; checks: Check[] }
 export interface Invoice extends InvoiceInput {
-  purchase_order_number?:string; matching_mode?:'none'|'two_way'|'three_way';
   id: string; created_at: string; updated_at: string; created_by: string;
   status: Status; attempts: number; checks: CheckResult | null;
   review_summary: string | null; review_mode: 'rules' | 'ai' | null;

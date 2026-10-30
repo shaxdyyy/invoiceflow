@@ -4,7 +4,6 @@ export const limits = { attempts: 2, modelSteps: 3, outputTokensPerStep: 400, re
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v, 'Enter a valid date');
 const amount = z.number().finite().min(0).max(100000000).refine(v => Math.abs(v * 100 - Math.round(v * 100)) < 0.00001, 'Use at most two decimal places');
 export const invoiceSchema = z.object({
-  po_number:z.string().trim().max(80).nullable().optional(),
   supplier: z.string().trim().min(2).max(160), invoice_number: z.string().trim().min(1).max(80),
   invoice_date: dateOnly, due_date: dateOnly, category: z.enum(['Office supplies', 'Software & services', 'Equipment', 'Travel', 'Other']),
   items: z.array(z.object({ description: z.string().trim().min(1).max(200), quantity: z.number().int().min(1).max(100000), unit_price: amount })).min(1).max(30),
@@ -30,4 +29,4 @@ export function rulesSummary(result: CheckResult) {
   return result.passed ? 'All independent checks passed. Review the supplier and supporting business context before making a decision. No payment will be made by this application.' : `Review blocked: ${result.checks.filter(c => !c.passed).map(c => c.detail).join(' ')}`;
 }
 export function canReview(status: string, attempts: number) { return ['submitted', 'escalated'].includes(status) && attempts < limits.attempts; }
-export function canDecide(role: string, status: string, passed: boolean, selfApproval = false) { return role === 'manager' && status === 'pending_approval' && passed && !selfApproval; }
+export function canDecide(role: string, status: string, passed: boolean, selfApproval = false) { return role === 'manager' && status === 'pending_approval' && passed; }

@@ -1,4 +1,4 @@
-> Enterprise upgrade prepared: DOCX/XLSX/TXT uploads, matching, risk controls, exception plans and invoice assistant. See [upgrade guide](docs/ENTERPRISE_UPGRADE.md) for scope, demo instructions, validation and release status.
+> Enterprise upgrade prepared: DOCX/XLSX/TXT uploads, side-by-side manager review, risk controls, exception plans and invoice assistant. See [upgrade guide](docs/ENTERPRISE_UPGRADE.md) for scope, demo instructions, validation and release status.
 
 # InvoiceFlow
 

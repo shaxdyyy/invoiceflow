@@ -13,7 +13,7 @@ export function runScenarios() {
     {name:'Bounded retry',expected:'Allow remaining attempt after failure',run:()=>canReview('escalated',1)},
     {name:'Already completed / no-op',expected:'Do not review an approved invoice again',run:()=>!canReview('approved',1)},
     {name:'Approval permissions',expected:'Employee cannot approve',run:()=>!canDecide('employee','pending_approval',true)},
-    {name:'Self-approval',expected:'Submitter cannot approve their own invoice',run:()=>!canDecide('manager','pending_approval',true,true)},
+    {name:'Single-manager approval',expected:'One manager may approve a checked invoice, including their own upload',run:()=>canDecide('manager','pending_approval',true,true)},
     {name:'Failed success gate',expected:'Manager cannot override failed checks',run:()=>!canDecide('manager','pending_approval',false)},
     {name:'Amount limit',expected:'Escalate values outside prototype policy',run:()=>!checkInvoice({...validFixture,items:[{description:'Equipment',quantity:1,unit_price:1000001}],total:1000001}).passed},
     {name:'Normalized duplicate key',expected:'Ignore letter case and surrounding spaces',run:()=>normalizeKey(' Paper & Co. ',' TEST-001 ')===normalizeKey(validFixture.supplier,validFixture.invoice_number)}

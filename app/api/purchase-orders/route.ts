@@ -1,6 +1,0 @@
-import { NextRequest,NextResponse } from 'next/server';
-import { z } from 'zod';
-import { authenticated } from '@/lib/server-auth';
-const schema=z.object({reference:z.string().trim().min(1).max(80),supplier:z.string().trim().min(2).max(160),receipt_reference:z.string().max(120),items:z.array(z.object({description:z.string().trim().min(1).max(200),quantity:z.number().int().min(1).max(100000),unit_price:z.number().min(0).max(100000000),received:z.number().int().min(0).max(100000)})).min(1).max(30)});
-export async function GET(req:NextRequest){try{const {db}=await authenticated(req);const {data,error}=await db.from('purchase_orders').select('*').order('updated_at',{ascending:false}).limit(300);if(error)throw error;return NextResponse.json({orders:data});}catch{return NextResponse.json({error:'Could not load purchase orders.'},{status:400});}}
-export async function POST(req:NextRequest){try{const {db}=await authenticated(req);const raw=await req.text();if(raw.length>14000)throw new Error('Request too large');const payload=schema.parse(JSON.parse(raw));const {data,error}=await db.rpc('save_purchase_order',{p_data:payload});if(error)throw error;return NextResponse.json({order:data});}catch(e){return NextResponse.json({error:e instanceof Error?e.message:(e as {message:string}).message||'Could not save purchase order.'},{status:400});}}

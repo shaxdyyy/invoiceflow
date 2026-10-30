@@ -2,7 +2,7 @@
 import { useEffect,useState } from 'react';
 import { ArrowUpRight,FileText,Loader2,ShieldCheck } from 'lucide-react';
 import { browserDatabase } from '@/lib/supabase';
-export interface DocumentRecord {id:string;owner_id:string;filename:string;mime_type:string;storage_path:string;file_size:number;invoice_id:string|null;status:string;engine:string|null;created_at:string;extraction_attempts:number;error:string|null}
+export interface DocumentRecord {id:string;owner_id:string;filename:string;mime_type:string;storage_path:string;file_size:number;invoice_id:string|null;status:string;engine:string|null;created_at:string;extraction_attempts:number;error:string|null;extracted?:import('@/lib/documents/parser').Extracted|null;review_data?:import('@/lib/documents/parser').Extracted|null;source_text?:string|null;content_hash?:string|null;snapshot_origin?:string;revision?:number;review_state?:string}
 export default function OriginalDocument({document,demoFile}:{document?:DocumentRecord;demoFile?:File}){
  const [url,setUrl]=useState('');const [error,setError]=useState('');const [loading,setLoading]=useState(false);
  useEffect(()=>{let current='';let active=true;if(demoFile){current=URL.createObjectURL(demoFile);setUrl(current);return()=>URL.revokeObjectURL(current);}if(document){setLoading(true);browserDatabase()!.storage.from('invoice-documents').createSignedUrl(document.storage_path,600).then(({data,error})=>{if(active){setLoading(false);if(error)setError('You cannot access this original, or the link expired. Reopen this invoice to try again.');else setUrl(data.signedUrl);}});}return()=>{active=false;};},[document?.id,demoFile]);

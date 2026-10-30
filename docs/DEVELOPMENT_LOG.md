@@ -74,3 +74,8 @@ Provider requests need a configured model key. Do not report live model success 
 ## 30 October 2026 — enterprise feature branch
 
 Implemented Office/text invoice uploads, two-/three-way matching with cumulative quantities, normalized duplicate/content checks, explained anomaly scores, bounded Gemini exception and search tools, manager-only purchase order storage, exception cases, and paginated scoped search. Tested the SQL in isolated embedded PostgreSQL, including a 2,000-invoice fixture. Prepared a demo-only preview; production release awaits explicit approval following automatic review rejection of the initial schema change. Full scope and limitations are recorded in ENTERPRISE_UPGRADE.md.
+
+
+## 30 October 2026 — revised source-comparison workflow
+
+Removed procurement and matching at the user’s request. Added server-owned extraction snapshots, read-only employee views, side-by-side originals and extracted facts, manager-only corrections with before/after audit, optimistic revisions and single-manager save-and-approve. Preserved duplicates, risk, exception agent and assistant, with workflow help and document inspection tools. Added database integration tests for the final permission model.
