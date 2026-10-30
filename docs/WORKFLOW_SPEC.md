@@ -51,7 +51,7 @@ A correction resets per-revision attempts, but does not bypass the per-user dail
 - Due date must not precede invoice date.
 - Expected total must be ≤ INR 10,00,000 (prototype policy).
 
-No automatic tax compliance claim. No payment execution. Structured data only; document extraction is future work.
+No automatic tax compliance claim. No payment execution. PDF/image/text document ingestion is implemented; structured invoice facts remain the authoritative input for checks.
 
 ## Failure paths and tests
 
@@ -60,3 +60,11 @@ See `tests/database.sql` and `lib/scenarios.ts`. Tests include bad input, valid 
 ## Human review and evidence
 
 The manager reads invoice details, check results and advisory review, then records a reason of 5–1000 characters. The action is rejected if the manager is the submitter or the invoice failed checks. Supplier authenticity/business legitimacy remains a human responsibility.
+
+## Document ingestion extension
+
+Upload PDF, PNG, JPEG, WebP or TXT (3 MB maximum, PDF ≤10 pages). Live files go to a private bucket and get an owner-scoped `documents` record. Automatic extraction uses Gemini when connected, otherwise an explicitly labeled on-device PDF/text/OCR reader. A complete extraction is saved and reviewed without retyping. Missing values, unknown currency and ambiguous fields require confirmation against the source.
+
+Gemini structured extraction has at most two attempts per document, a 35-second timeout, 3,500 output tokens per attempt, no SDK retries and a per-user daily extraction budget. Source facts are schema-validated; wrong printed totals are retained for deterministic validation. Local text is capped at 24,000 characters. The owner must confirm free-tier eligibility; the app cannot prove the provider billing plan.
+
+Original files cannot be overwritten through application policies. Linking is idempotent and creates an invoice activity event. Gemini provenance can only be attached after a server-authenticated extraction result. A document remains visible in Documents even if extraction fails or requires input. Provider configuration uses server-side AES-256-GCM encryption; only managers can update it, and server authorization is required to retrieve the ciphertext.

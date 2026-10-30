@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requestDatabase } from '@/lib/supabase';
 import { reviewInvoice } from '@/lib/agent';
 import { z } from 'zod';
+import { providerConfiguration } from '@/lib/provider';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 export async function POST(request: NextRequest) {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await db.rpc('start_review', { p_id: body.invoiceId });
     if (error) return NextResponse.json({ error: error.message }, { status: 409 });
     if (data.status !== 'processing') return NextResponse.json({ invoice: data, noop: true });
-    const result = await reviewInvoice(data);
+    const result = await reviewInvoice(data,await providerConfiguration(db));
     const finished = await db.rpc('finish_review', { p_id: data.id, p_run_id: data.run_id, p_secret: process.env.REVIEW_SERVER_SECRET, p_result: result });
     if (finished.error) return NextResponse.json({ error: finished.error.message }, { status: 409 });
     return NextResponse.json({ invoice: finished.data });

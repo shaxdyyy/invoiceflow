@@ -1,0 +1,58 @@
+-- Document metadata/RLS integration tests. Everything rolls back; model responses are injected.
+begin;
+create temporary table ids(name text primary key,id uuid default gen_random_uuid());
+insert into ids(name) values('owner'),('other'),('manager');
+create temporary table results(name text,passed boolean);
+grant select on ids to authenticated;grant select,insert on results to authenticated;
+insert into auth.users(id,aud,role,email,raw_user_meta_data) select id,'authenticated','authenticated',name||'-document-test@example.invalid',jsonb_build_object('name',name) from ids;
+insert into public.profiles(id,name,role) select id,name,case when name='manager' then 'manager' else 'employee' end from ids;
+update private.settings set value=encode(extensions.digest('document-test-server','sha256'),'hex') where key='review_hash';
+set local role authenticated;
+select set_config('request.jwt.claim.sub',(select id::text from ids where name='owner'),true);
+do $$
+declare path text;doc public.documents;item public.invoices;blocked boolean;
+begin
+ path:=auth.uid()::text||'/test/source.pdf';
+ insert into storage.objects(bucket_id,name) values('invoice-documents',path);
+ doc:=public.register_document(path,'source.pdf','application/pdf',100);
+ insert into results values('Owner can register own private upload',doc.owner_id=auth.uid());
+ blocked:=false;begin perform public.register_document('other/source.pdf','other.pdf','application/pdf',100);exception when others then blocked:=true;end;
+ insert into results values('Cannot register someone else source',blocked);
+ blocked:=false;begin perform public.provider_configuration('wrong-secret');exception when others then blocked:=true;end;
+ insert into results values('Client cannot read provider credentials',blocked);
+ blocked:=false;begin perform public.save_provider_configuration('document-test-server','{"encrypted_key":"test"}');exception when others then blocked:=true;end;
+ insert into results values('Employee cannot change provider',blocked);
+ item:=public.create_invoice('{"supplier":"Document Test Vendor","invoice_number":"DOC-TEST-001","invoice_date":"2026-10-01","due_date":"2026-10-15","category":"Other","items":[{"description":"Notebook","quantity":10,"unit_price":50}],"tax":0,"total":500,"notes":""}',gen_random_uuid());
+ blocked:=false;begin perform public.link_document(doc.id,item.id,'gemini');exception when others then blocked:=true;end;
+ insert into results values('Cannot claim Gemini provenance without extraction',blocked);
+ doc:=public.start_extraction(doc.id);
+ blocked:=false;begin perform public.start_extraction(doc.id);exception when others then blocked:=true;end;
+ insert into results values('Concurrent document extraction blocked',blocked);
+ blocked:=false;begin perform public.finish_extraction(doc.id,doc.run_id,'wrong','{}','');exception when others then blocked:=true;end;
+ insert into results values('Forged extraction completion blocked',blocked);
+ doc:=public.finish_extraction(doc.id,doc.run_id,'document-test-server','{"supplier":"Document Test Vendor","uncertainties":[]}','');
+ insert into results values('Authenticated server result saved',doc.status='extracted' and doc.engine='gemini');
+ perform public.link_document(doc.id,item.id,'gemini');
+ perform public.link_document(doc.id,item.id,'gemini');
+ insert into results values('Source linking is idempotent',(select count(*)=1 from public.activity where invoice_id=item.id and event='source_document_attached'));
+ blocked:=false;begin update public.documents set engine='gemini' where id=doc.id;exception when others then blocked:=true;end;
+ insert into results values('Direct document mutation denied',blocked);
+ path:=auth.uid()::text||'/test/failure.pdf';insert into storage.objects(bucket_id,name) values('invoice-documents',path);doc:=public.register_document(path,'failure.pdf','application/pdf',100);
+ doc:=public.start_extraction(doc.id);doc:=public.finish_extraction(doc.id,doc.run_id,'document-test-server','{"uncertainties":[]}','Injected model failure');
+ doc:=public.start_extraction(doc.id);doc:=public.finish_extraction(doc.id,doc.run_id,'document-test-server','{"uncertainties":[]}','Injected model failure');
+ blocked:=false;begin perform public.start_extraction(doc.id);exception when others then blocked:=true;end;
+ insert into results values('Document extraction stops after two attempts',blocked);
+end $$;
+select set_config('request.jwt.claim.sub',(select id::text from ids where name='other'),true);
+insert into results values('Other employee cannot read documents',(select count(*)=0 from public.documents));
+insert into results values('Other employee cannot read original file metadata',(select count(*)=0 from storage.objects where bucket_id='invoice-documents'));
+do $$declare blocked boolean:=false;begin
+ begin insert into storage.objects(bucket_id,name) select 'invoice-documents',id::text||'/forged.pdf' from ids where name='owner';exception when others then blocked:=true;end;
+ insert into results values('Other employee cannot upload into owner folder',blocked);
+end $$;
+select set_config('request.jwt.claim.sub',(select id::text from ids where name='manager'),true);
+insert into results values('Manager can inspect original document records',(select count(*)=2 from public.documents));
+select public.save_provider_configuration('document-test-server','{"encrypted_key":"encrypted-test-value","model":"gemini-3.5-flash-lite"}');
+insert into results values('Manager can save server-encrypted provider configuration',public.provider_configuration('document-test-server')->>'encrypted_key'='encrypted-test-value');
+select jsonb_agg(jsonb_build_object('scenario',name,'passed',passed)) as document_test_results from results;
+rollback;

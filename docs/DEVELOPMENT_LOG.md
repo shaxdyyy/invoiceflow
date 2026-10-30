@@ -50,3 +50,12 @@ Provider requests need a configured model key. Do not report live model success 
 - Manager activation and optional AI-key setup remain owner actions documented in README.
 - Fixed dashboard attention filtering so escalation records match the displayed count; approval CSV export now matches the inbox filter.
 - Serialized per-user daily review reservations to prevent concurrent requests from bypassing the review-start budget.
+
+## Document-first redesign
+
+- Inspected the user-provided 23-second video reference. Adapted its monochrome typography, pill navigation, generous spacing and motion into an original invoice interface with a CSS-rendered blue orb and animated receipt scanner.
+- Consulted official Ramp invoice-processing patterns and Gemini document-processing/model documentation. Used upload → extract → validate → approval as the interaction model; no proprietary source was copied.
+- Added private PDF/image/text uploads, browser text/OCR reading, Gemini structured extraction, original-document access and automatic checking after save.
+- Added a manager-only in-app AI Studio connection screen, small provider connection test, encrypted key storage and selectable currently documented Gemini models.
+- Production build and TypeScript checks passed. 30 automated tests passed, including actual parsing, missing-field behaviour, preserved mismatches and credential encryption. 16 additional transactional document/storage-permission assertions passed.
+- A real Gemini key has not been provided; no live provider success is claimed. User-account signup/email delivery and full cloud extraction remain separate owner verification steps.

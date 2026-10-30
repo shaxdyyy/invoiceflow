@@ -45,3 +45,11 @@
 **What does it cost?** The prototype uses free-tier hosting/database and optional eligible free-tier model access. Limits apply; no paid fallback is configured.
 
 **What is incomplete?** PDF extraction, real supplier verification, accounting integrations, business validation and live model verification until a provider key is tested.
+
+## New upload-first demonstration
+
+Open Upload invoice → Try a practice PDF. Explain that the demo reads the actual sample PDF on-device, not through Gemini. A complete extraction should save and check automatically. Open the source and compare extracted line items. In demo mode, use “Try the manager view” to demonstrate the separate final decision.
+
+For real AI, sign into the live workspace as a manager and open Settings → Google AI Studio. Connect an eligible free-tier key using Test & connect. Only claim a live model demonstration after successfully reading a sample document with Gemini. Show the extraction engine label and original source.
+
+Use the video-inspired design as a visual reference, not as copied implementation. Explain that interface decisions prioritize one upload action, readable text, explicit exception handling and a final human decision.

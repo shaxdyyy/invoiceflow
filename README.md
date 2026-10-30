@@ -27,15 +27,24 @@ InvoiceFlow combines structured invoice submission, deterministic checks, an opt
 - Bounded AI tool calls, no-op behaviour, escalation, human approval and audit export.
 - Executable test lab, automated tests, workflow specification and coordinator walkthrough.
 
-## AI: implemented, optional, not silently simulated
+## Upload-first workflow
 
-Without a model key, live reviews run in **Rules-only** mode. The app explicitly labels this. It is a usable validation/approval workflow, but it is not a live LLM demonstration.
+Choose **Upload invoice** and drop in a PDF, JPG/PNG/WebP image, or text invoice. Limits: 3 MB and 10 PDF pages. A complete, unambiguous extraction is saved and checked automatically. Uncertain or missing fields are shown beside the original for confirmation. The printed total is preserved; it is never replaced by a calculated total.
 
-To enable actual AI, add an eligible free-tier `GOOGLE_GENERATIVE_AI_API_KEY` to Vercel server environment variables and redeploy. Optionally set `GOOGLE_MODEL`; the default is `gemini-2.5-flash`. Verify model availability and free-tier eligibility in your account before use. Do not enable billing merely to bypass quota. There is no paid fallback.
+- **Local reading:** PDF text extraction and browser OCR work without a cloud API key. These are explicitly labeled local readers, not simulated Gemini. OCR downloads its English model/worker assets and needs browser network access on first use. Complex layouts can require manual corrections.
+- **Gemini:** Settings → Google AI Studio → paste a free-eligible key → Test & connect. Manager access is required. The key is tested with a small generation request, encrypted using AES-256-GCM on the server, and saved in a private database schema. It is never returned to browser code or committed to Git.
+- **Source documents:** live originals are stored in a private Supabase bucket. Employees see their own files; managers can inspect the team originals. Temporary signed links allow source review. Demo originals remain available only until refresh.
+- **Practice:** the upload dialog includes **Try a practice PDF**. It runs a real generated sample through the document reader and checker, without pretending to call Gemini.
 
-The AI calls `check_invoice` against server-loaded data, then `draft_review` to prepare advice. It has no approval, payment or arbitrary execution tool. Tool order and inputs are constrained; the database independently rechecks approval gates. A missing tool result, timeout or model failure escalates instead of inventing a result. Real provider access remains unverified until a key is configured and tested.
+## AI configuration and verification
 
-**Privacy:** when AI is enabled, invoice fields are sent to Google. Free-tier provider terms may allow data to be used for product improvement. Use fictional/anonymized inputs for this prototype. Never include confidential supplier information without permission.
+A Gemini connection is not currently supplied by the owner. The integration is implemented, but real provider extraction remains unverified until a valid key is connected and tested. Do not present local reading as a live LLM result.
+
+The owner can also configure `GOOGLE_GENERATIVE_AI_API_KEY` in Vercel, which takes precedence over the encrypted in-app key. Default model: `gemini-3.5-flash-lite`; `gemini-3.8-flash` is selectable. Confirm model access, quota and free-tier eligibility in Google AI Studio. The application cannot inspect the provider billing plan. No paid fallback is enabled.
+
+The model extracts structured, schema-validated invoice facts. Missing values are nullable and flagged, not invented. A separate tool-calling reviewer runs `check_invoice` and `draft_review`; it cannot approve or pay. Every saved invoice is rechecked by authoritative database logic, independently of the LLM.
+
+**Privacy:** Gemini receives the uploaded document and invoice fields when connected. Free-tier data terms may allow product improvement. Use fictional/anonymized data unless authorized. Local extraction does not send document content to Google, although OCR software assets are downloaded to the browser.
 
 ## Local setup
 
@@ -55,7 +64,7 @@ npm run test:report
 npm run build
 ```
 
-For a new database, apply `database/001_invoiceflow.sql`. Generate a random review secret and a separate random manager setup code. Store their SHA-256 hex digests in `private.settings` with keys `review_hash` and `setup_hash`. Set the original review secret only in `REVIEW_SERVER_SECRET` on the server; keep the original setup code only in the owner's `INVOICEFLOW_SETUP_CODE` environment variable. Neither secret belongs in Git.
+For a new database, apply `database/001_invoiceflow.sql` followed by `database/002_documents_and_gemini.sql`. Generate a random review secret and a separate random manager setup code. Store their SHA-256 hex digests in `private.settings` with keys `review_hash` and `setup_hash`. Set the original review secret only in `REVIEW_SERVER_SECRET` on the server; keep the original setup code only in the owner's `INVOICEFLOW_SETUP_CODE` environment variable. Neither secret belongs in Git.
 
 The connected project has already been provisioned separately from CampusFix. Environment values are kept out of source control.
 
@@ -90,7 +99,7 @@ The database owner can administratively alter records; this is an application-le
 
 ## Scope and limitations
 
-The prototype accepts manually entered INR invoices; it does not parse PDFs, validate statutory taxes, verify authenticity, integrate an ERP, or transfer funds. The INR 10,00,000 limit is a demonstration policy, not a business or legal rule. Owner activation must be completed before live approvals. Real AI needs provider configuration. The in-app test lab runs local checker/policy tests, not a live-model benchmark. Activity views currently display the latest 500 events. Single-workspace prototype; public signup should be replaced by team invitations before broader use.
+The prototype reads INR invoice PDFs/images/text and also supports manual entry. It does not validate statutory taxes, verify authenticity, integrate an ERP, or transfer funds. Extraction can be wrong; source review and the final human approval remain important. The INR 10,00,000 limit is a demonstration policy, not a business or legal rule. Owner activation must be completed before live approvals. Real AI needs provider configuration. Extraction has at most two attempts per document; individual extracted files need confirmation when fields are uncertain. The in-app test lab runs local checker/policy tests, not a live-model benchmark. Activity views currently display the latest 500 events. Single-workspace prototype; public signup should be replaced by team invitations before broader use.
 
 ## Development provenance
 
