@@ -69,3 +69,8 @@ Provider requests need a configured model key. Do not report live model success 
 - Added tax-component reconciliation tests and low-confidence OCR handling. Model access still requires an owner-supplied key and is not claimed as verified.
 
 - Final deployed image-OCR smoke test passed: generated sample image → actual on-device OCR → two line items and INR 700 → independent checks → approval queue. This was local OCR, not a claimed Gemini request. First use downloaded OCR software assets.
+
+
+## 30 October 2026 — enterprise feature branch
+
+Implemented Office/text invoice uploads, two-/three-way matching with cumulative quantities, normalized duplicate/content checks, explained anomaly scores, bounded Gemini exception and search tools, manager-only purchase order storage, exception cases, and paginated scoped search. Tested the SQL in isolated embedded PostgreSQL, including a 2,000-invoice fixture. Prepared a demo-only preview; production release awaits explicit approval following automatic review rejection of the initial schema change. Full scope and limitations are recorded in ENTERPRISE_UPGRADE.md.

@@ -42,7 +42,7 @@ begin
  insert into test_results values('Employee approval denied',blocked);
  blocked:=false;begin update public.invoices set status='approved' where id=row.id;exception when others then blocked:=true;end;
  insert into test_results values('Direct table mutation denied',blocked);
- payload:=jsonb_set(payload,'{invoice_number}','"INTEGRATION-RETRY"');payload:=jsonb_set(payload,'{total}','500');
+ payload:=jsonb_set(payload,'{invoice_number}','"INTEGRATION-RETRY"');payload:=jsonb_set(payload,'{invoice_date}','"2026-10-02"');payload:=jsonb_set(payload,'{total}','500');
  row:=public.create_invoice(payload,gen_random_uuid());
  result:=public.start_review(row.id);result:=public.finish_review(row.id,result.run_id,'integration-review-only','{"mode":"ai","summary":"Unavailable","tokens":0,"error":"model unavailable"}');
  insert into test_results values('Model failure escalates',result.status='escalated');

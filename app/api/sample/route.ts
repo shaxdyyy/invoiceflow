@@ -1,14 +1,9 @@
-import { NextRequest,NextResponse } from 'next/server';
-import { PDFDocument,StandardFonts,rgb } from 'pdf-lib';
-export const runtime='nodejs';
-export async function GET(request:NextRequest){
- const pdf=await PDFDocument.create();const page=pdf.addPage([595,842]);const font=await pdf.embedFont(StandardFonts.Helvetica);const bold=await pdf.embedFont(StandardFonts.HelveticaBold);
- const write=(text:string,y:number,size=12,strong=false)=>page.drawText(text,{x:52,y,size,font:strong?bold:font,color:rgb(.12,.17,.22)});
- write('INVOICE',770,32,true);write('Fictional practice document / InvoiceFlow',742,10);
- write('Supplier: Paper & Co.',690,15,true);write('Invoice number: '+(request.nextUrl.searchParams.get('kind')==='image'?'PRACTICE-IMAGE-2026-001':'PRACTICE-PDF-2026-001'),655);write('Invoice date: 2026-10-30',629);write('Due date: 2026-11-15',603);write('Currency: INR',577);
- page.drawLine({start:{x:52,y:551},end:{x:543,y:551},thickness:1,color:rgb(.8,.85,.9)});
- write('Description | Quantity | Unit price | Amount',520,11,true);write('A5 notebooks | 10 | 50.00 | 500.00',485);write('Desk folders | 5 | 40.00 | 200.00',454);
- page.drawLine({start:{x:52,y:427},end:{x:543,y:427},thickness:1,color:rgb(.8,.85,.9)});
- write('Tax: 0.00',392);write('Total: 700.00',350,22,true);write('This is sample data. No payment is due.',297,10);
- return new NextResponse(Buffer.from(await pdf.save()),{headers:{'Content-Type':'application/pdf','Content-Disposition':'inline; filename="invoiceflow-practice.pdf"','Cache-Control':'public, max-age=3600'}});
+import {NextRequest,NextResponse} from 'next/server';
+import {zipSync,strToU8} from 'fflate';
+const sample='INVOICE\nSupplier: Paper & Co.\nInvoice number: PRACTICE-2026-001\nInvoice date: 2026-10-30\nDue date: 2026-11-15\nCurrency: INR\n\nDescription | Quantity | Unit price | Amount\nA5 notebooks | 10 | 50.00 | 500.00\nDesk folders | 5 | 40.00 | 200.00\n\nTax: 0.00\nTotal: 700.00\n\nFictional practice invoice. No payment is due.';
+export async function GET(req:NextRequest){const format=req.nextUrl.searchParams.get('format')||'txt';let bytes:Uint8Array;let type='text/plain';
+ if(format==='docx'){const escape=(s:string)=>s.replaceAll('&','&amp;').replaceAll('<','&lt;');const body=sample.split('\n').map(line=>line.includes('|')?'<w:tbl><w:tr>'+line.split('|').map(c=>`<w:tc><w:p><w:r><w:t>${escape(c.trim())}</w:t></w:r></w:p></w:tc>`).join('')+'</w:tr></w:tbl>':`<w:p><w:r><w:t>${escape(line)}</w:t></w:r></w:p>`).join('');bytes=zipSync({'[Content_Types].xml':strToU8('<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'),'_rels/.rels':strToU8('<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'),'word/document.xml':strToU8(`<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr/></w:body></w:document>`)});type='application/vnd.openxmlformats-officedocument.wordprocessingml.document';}
+ else if(format==='xlsx'){const ExcelJS=(await import('exceljs')).default;const wb=new ExcelJS.Workbook();const sheet=wb.addWorksheet('Invoice');for(const line of sample.split('\n'))sheet.addRow(line.includes('|')?line.split('|').map(c=>c.trim()):[line]);sheet.columns.forEach(c=>c.width=28);bytes=new Uint8Array(await wb.xlsx.writeBuffer());type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';}
+ else if(format==='txt')bytes=strToU8(sample);else return NextResponse.json({error:'Use docx, xlsx or txt.'},{status:400});
+ return new NextResponse(bytes as BodyInit,{headers:{'Content-Type':type,'Content-Disposition':`attachment; filename="invoiceflow-practice.${format}"`,'Cache-Control':'no-store'}});
 }

@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
     const result = await reviewInvoice(data,await providerConfiguration(db));
     const finished = await db.rpc('finish_review', { p_id: data.id, p_run_id: data.run_id, p_secret: process.env.REVIEW_SERVER_SECRET, p_result: result });
     if (finished.error) return NextResponse.json({ error: finished.error.message }, { status: 409 });
-    return NextResponse.json({ invoice: finished.data });
+    const controls=await db.rpc('record_exception',{p_id:data.id,p_secret:process.env.REVIEW_SERVER_SECRET,p_plan:'',p_engine:'rules'});
+    if(controls.error)return NextResponse.json({error:'Invoice review saved, but enterprise checks need attention. Open the invoice to retry.'},{status:409});
+    return NextResponse.json({ invoice: finished.data, assessment:controls.data });
   } catch (error) {
     return NextResponse.json({ error: error instanceof z.ZodError || error instanceof SyntaxError ? 'Invalid invoice identifier' : 'Review could not complete. Retry after two minutes if it remains in progress.' }, { status: 400 });
   }

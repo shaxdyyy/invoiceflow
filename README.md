@@ -1,3 +1,5 @@
+> Enterprise upgrade prepared: DOCX/XLSX/TXT uploads, matching, risk controls, exception plans and invoice assistant. See [upgrade guide](docs/ENTERPRISE_UPGRADE.md) for scope, demo instructions, validation and release status.
+
 # InvoiceFlow
 
 A working invoice review and approval application for **Problem Statement 2: Build and Deploy a Pre-Tested Enterprise Workflow**.

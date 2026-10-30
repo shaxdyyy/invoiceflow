@@ -12,11 +12,11 @@ select set_config('request.jwt.claim.sub',(select id::text from ids where name='
 do $$
 declare path text;doc public.documents;item public.invoices;blocked boolean;
 begin
- path:=auth.uid()::text||'/test/source.pdf';
+ path:=auth.uid()::text||'/test/source.txt';
  insert into storage.objects(bucket_id,name) values('invoice-documents',path);
- doc:=public.register_document(path,'source.pdf','application/pdf',100);
+ doc:=public.register_document(path,'source.txt','text/plain',100);
  insert into results values('Owner can register own private upload',doc.owner_id=auth.uid());
- blocked:=false;begin perform public.register_document('other/source.pdf','other.pdf','application/pdf',100);exception when others then blocked:=true;end;
+ blocked:=false;begin perform public.register_document('other/source.txt','other.txt','text/plain',100);exception when others then blocked:=true;end;
  insert into results values('Cannot register someone else source',blocked);
  blocked:=false;begin perform public.provider_configuration('wrong-secret');exception when others then blocked:=true;end;
  insert into results values('Client cannot read provider credentials',blocked);
@@ -37,7 +37,7 @@ begin
  insert into results values('Source linking is idempotent',(select count(*)=1 from public.activity where invoice_id=item.id and event='source_document_attached'));
  blocked:=false;begin update public.documents set engine='gemini' where id=doc.id;exception when others then blocked:=true;end;
  insert into results values('Direct document mutation denied',blocked);
- path:=auth.uid()::text||'/test/failure.pdf';insert into storage.objects(bucket_id,name) values('invoice-documents',path);doc:=public.register_document(path,'failure.pdf','application/pdf',100);
+ path:=auth.uid()::text||'/test/failure.txt';insert into storage.objects(bucket_id,name) values('invoice-documents',path);doc:=public.register_document(path,'failure.txt','text/plain',100);
  doc:=public.start_extraction(doc.id);doc:=public.finish_extraction(doc.id,doc.run_id,'document-test-server','{"uncertainties":[]}','Injected model failure');
  doc:=public.start_extraction(doc.id);doc:=public.finish_extraction(doc.id,doc.run_id,'document-test-server','{"uncertainties":[]}','Injected model failure');
  blocked:=false;begin perform public.start_extraction(doc.id);exception when others then blocked:=true;end;
@@ -47,7 +47,7 @@ select set_config('request.jwt.claim.sub',(select id::text from ids where name='
 insert into results values('Other employee cannot read documents',(select count(*)=0 from public.documents));
 insert into results values('Other employee cannot read original file metadata',(select count(*)=0 from storage.objects where bucket_id='invoice-documents'));
 do $$declare blocked boolean:=false;begin
- begin insert into storage.objects(bucket_id,name) select 'invoice-documents',id::text||'/forged.pdf' from ids where name='owner';exception when others then blocked:=true;end;
+ begin insert into storage.objects(bucket_id,name) select 'invoice-documents',id::text||'/forged.txt' from ids where name='owner';exception when others then blocked:=true;end;
  insert into results values('Other employee cannot upload into owner folder',blocked);
 end $$;
 select set_config('request.jwt.claim.sub',(select id::text from ids where name='manager'),true);
