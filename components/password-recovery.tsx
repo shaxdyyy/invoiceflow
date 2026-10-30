@@ -1,0 +1,9 @@
+'use client';
+import {useState,type FormEvent} from 'react';
+import {browserDatabase} from '@/lib/supabase';
+import {authMessage} from '@/lib/auth-flow';
+export default function PasswordRecovery({onDone}:{onDone:()=>void}){
+ const [password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ async function save(e:FormEvent){e.preventDefault();if(password!==confirm){setError('Passwords do not match.');return;}setBusy(true);setError('');try{const db=browserDatabase();if(!db)throw new Error('Authentication is unavailable.');const session=await db.auth.getSession();if(!session.data.session)throw new Error('The reset session has expired. Request a new password reset.');const r=await db.auth.updateUser({password});if(r.error)throw r.error;setPassword('');setConfirm('');await db.auth.signOut({scope:'local'});onDone();}catch(e){setError(authMessage(e));}finally{setBusy(false);}}
+ return <div className="modal-backdrop"><section className="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="reset-title"><h2 id="reset-title">Choose a new password</h2><p>Your recovery link opened successfully. Enter a new password here, then sign in again.</p><form onSubmit={save}><label>New password<input type="password" autoComplete="new-password" minLength={12} value={password} onChange={e=>setPassword(e.target.value)} required/></label><label>Confirm new password<input type="password" autoComplete="new-password" minLength={12} value={confirm} onChange={e=>setConfirm(e.target.value)} required/></label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="button primary full-button" disabled={busy}>{busy?'Saving…':'Save new password'}</button><button type="button" className="button secondary" disabled={busy} onClick={onDone}>Return to sign in</button></form></section></div>;
+}

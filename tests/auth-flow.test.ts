@@ -1,0 +1,8 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {AUTH_REDIRECT_URL,authMessage,authReturn,cleanAuthReturn} from '../lib/auth-flow';
+test('confirmation requests always point to the production HTTPS origin',()=>assert.equal(AUTH_REDIRECT_URL,'https://invoiceflow-eight-omega.vercel.app/'));
+test('expired confirmation returns a recovery message without losing existing sessions',()=>{const r=authReturn('https://invoiceflow-eight-omega.vercel.app/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');assert.match(r.message,/already confirmed/);assert.equal(r.recovery,false);assert.equal(r.hasAuthData,true);});
+test('password recovery is distinguished from normal signup confirmation',()=>{assert.equal(authReturn('https://invoiceflow-eight-omega.vercel.app/#type=recovery&access_token=test').recovery,true);assert.equal(authReturn('https://invoiceflow-eight-omega.vercel.app/#type=signup&access_token=test').recovery,false);});
+test('callback URL cleanup removes credentials and preserves unrelated navigation',()=>{assert.equal(cleanAuthReturn('https://invoiceflow-eight-omega.vercel.app/?code=sensitive&view=invoices#access_token=secret&refresh_token=secret'), '/?view=invoices');assert.equal(cleanAuthReturn('https://invoiceflow-eight-omega.vercel.app/#about'), '/#about');});
+test('email quota, confirmation and invalid-password errors have distinct next steps',()=>{assert.match(authMessage({code:'over_email_send_rate_limit'}),/one hour/);assert.match(authMessage({code:'email_not_confirmed'}),/Resend confirmation/);assert.match(authMessage({code:'invalid_credentials'}),/Forgot password/);});
