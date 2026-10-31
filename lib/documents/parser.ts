@@ -15,7 +15,7 @@ export const extractedSchema = z.object({
  uncertainties:z.array(z.string().max(300)).max(12)
 });
 export type Extracted = z.infer<typeof extractedSchema>;
-export interface Extraction { data: Extracted; engine:'gemini'|'local-text'|'local-ocr'; text?:string; model?:string; documentId?:string; warnings:string[] }
+export interface Extraction { data: Extracted; engine:'gemini'|'demo'|'local-text'|'local-ocr'; text?:string; model?:string; documentId?:string; warnings:string[] }
 export function validateDocument(name:string,type:string,size:number){
  if(size<=0)throw new Error('This file is empty. Choose an invoice with content.');
  if(size>documentLimits.maxBytes)throw new Error('Choose a document smaller than 3 MB.');
